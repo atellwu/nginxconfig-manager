@@ -1,0 +1,14 @@
+user ${config.user};
+worker_processes 4;
+pid ${config.pid};
+
+events {
+     #if(${config.useEpoll})use epoll;#end
+     worker_connections ${config.workerConnections};
+     ulimit ${config.ulimit};
+}
+
+sendfile #if(${config.sendfile})on #else off #end;
+reset_timedout_connection #if(${config.resetTimedoutConnection})on #else off #end;
+tcp_nopush #if(${config.tcpNopush})on #else off #end;
+ 

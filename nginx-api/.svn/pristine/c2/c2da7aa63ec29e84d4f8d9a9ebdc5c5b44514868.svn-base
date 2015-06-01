@@ -1,0 +1,46 @@
+{
+"ConfigGen": [
+],
+    "Region": [
+      {
+	  "_id" : "testRegionA",
+	  "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+      },
+      {
+	  "_id" : "testRegionB",
+	  "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+      }
+    ],
+    "NodeStatus": [
+        {
+            "_id": 1,
+            "detail": "detail",
+            "nodeId": "testNodeStatusA",
+            "isDefaultServer": false,
+            "region": "testRegionA",
+            "state": "TOBE_UPDATED",
+            "version": 1,
+            "lastHeartbeatTime": "2014-12-15T08:59:09.172Z",
+            "lastStatusUpdateTime": "2014-12-16T08:59:09.172Z",
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+        },
+        {
+            "_id": 2,
+            "detail": "detail",
+            "nodeId": "testNodeStatusB",
+            "isDefaultServer": false,
+            "region": "testRegionA",
+            "state": "TOBE_UPDATED",
+            "version": 1,
+            "lastHeartbeatTime": "2014-12-15T08:59:09.172Z",
+            "lastStatusUpdateTime": "2014-12-16T08:59:09.172Z",
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+        }
+    ]
+}

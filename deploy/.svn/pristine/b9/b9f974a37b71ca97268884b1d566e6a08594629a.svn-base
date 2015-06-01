@@ -1,0 +1,13 @@
+##添加region区域，启动程序后，可以通过api直接添加：
+export lbsUri="http://localhost:8080"
+curl -H "Content-Type: application/json" -d '{"name":"US_East_N_Virginia"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"US_West_Oregon"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"US_East_N_California"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"EU_Ireland"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"EU_Frankfurt"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Asia_Pacific_Singapore"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Asia_Pacific_Tokyo"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Asia_Pacific_Sydney"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"South_America_Sao_Paulo"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Hongkong"}' $lbsUri/region/save
+curl -H "Content-Type: application/json" -d '{"name":"London"}' $lbsUri/region/save

@@ -1,0 +1,229 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import junit.framework.Assert;
+
+import org.adclear.dbunit.json.DbUnitRuleMongo;
+import org.adclear.dbunit.json.annotations.JsonData;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.junit.Rule;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.unitils.reflectionassert.ReflectionAssert;
+import org.unitils.reflectionassert.ReflectionComparatorMode;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.ImmutableMap;
+import com.yeahmobi.loadbalance_manager.api.AbstractController.JsonResult;
+import com.yeahmobi.loadbalance_manager.common.Constants;
+import com.yeahmobi.loadbalance_manager.helper.MapWrapper;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Global;
+
+public class GlobalControllerTest extends ControllerBaseTest {
+
+    @Rule
+    public DbUnitRuleMongo   dbUnit = new DbUnitRuleMongo(ControllerBaseTest.class, MONGODB_URI);
+
+    @Autowired
+    private GlobalController globalController;
+
+    @Test
+    @JsonData(fileName = "initGlobal.json")
+    public void testList() throws Exception {
+        String json = this.globalController.list();
+        JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+
+        JsonResult expectedResult = createSuccessJsonResult();
+        Global global = createGlobal();
+        expectedResult.setResult(global);
+
+        assertResult(expectedResult, actualResult);
+    }
+
+    @Test
+    @JsonData(fileName = "initGlobal.json")
+    public void testGet() throws Exception {
+        String[] keys = { "user", "tcpNodelay" };
+        String json = this.globalController.get(keys);
+        JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+
+        Map<String, ? extends Object> keyValues = ImmutableMap.of("user", "ops", "tcpNodelay", Boolean.FALSE);
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("version", 3);
+        map.put("gmtModified", "2014-12-16 08:59:09");
+        map.put("keyValues", keyValues);
+        JsonResult expectedResult = createSuccessJsonResult();
+        expectedResult.setResult(map);
+
+        assertResult(expectedResult, actualResult);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    @JsonData(fileName = "initGlobal.json")
+    public void testSet() throws Exception {
+        // save 'user'
+        {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("user", "atell");
+            MapWrapper requestMap = new MapWrapper(map);
+            String json = this.globalController.set(requestMap);
+            JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+
+            JsonResult expectedResult = createSuccessJsonResult();
+            expectedResult.setResult("");
+
+            assertResult(expectedResult, actualResult);
+        }
+        // test 'user'
+        {
+            String[] keys = { "user" };
+            String json = this.globalController.get(keys);
+            JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+            Assert.assertEquals(JsonResult.CODE_SUCCESS, actualResult.getErrorCode());
+            Map<String, ? extends Object> actualKeyValues = (Map<String, ? extends Object>) ((Map<String, Object>) actualResult.getResult()).get("keyValues");
+
+            Map<String, ? extends Object> keyValues = ImmutableMap.of("user", "atell");
+
+            Assert.assertEquals(keyValues, actualKeyValues);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    @JsonData(fileName = "initGlobal.json")
+    public void testInfo() throws Exception {
+        // save 'user'
+        {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("user", "atell");
+            MapWrapper requestMap = new MapWrapper(map);
+            String json = this.globalController.set(requestMap);
+            JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+
+            JsonResult expectedResult = createSuccessJsonResult();
+            expectedResult.setResult("");
+
+            assertResult(expectedResult, actualResult);
+        }
+
+        String json = this.globalController.info();
+        JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+        Assert.assertEquals(JsonResult.CODE_SUCCESS, actualResult.getErrorCode());
+        List<Map<String, Object>> list = (List<Map<String, Object>>) actualResult.getResult();
+
+        String[] modules = GlobalController.modules;
+        assertInfo(modules, list);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    @JsonData(fileName = "initGlobal.json")
+    public void testDownload() throws Exception {
+        // save 'user'
+        {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("user", "atell");
+            MapWrapper requestMap = new MapWrapper(map);
+            String json = this.globalController.set(requestMap);
+            JsonResult actualResult = JSON.parseObject(json, JsonResult.class);
+
+            JsonResult expectedResult = createSuccessJsonResult();
+            expectedResult.setResult("");
+
+            assertResult(expectedResult, actualResult);
+        }
+
+        HttpEntity<String> entity = (HttpEntity<String>) this.globalController.download(1L);
+        System.out.println(entity);
+        Assert.assertEquals(StringUtils.trim(IOUtils.toString(GlobalControllerTest.class.getResourceAsStream("/testDownload"))),
+                            StringUtils.trim(entity.getBody()));
+    }
+
+    private void assertInfo(String[] modules, List<Map<String, Object>> list) throws ParseException {
+        Assert.assertEquals(modules.length, list.size());
+        for (int i = 0; i < modules.length; i++) {
+            String module = modules[i];
+            Map<String, Object> map = list.get(i);
+            // module
+            Assert.assertEquals(module, map.get("module"));
+            // gmtModified
+            TestUtils.generallyEquals(new Date(),
+                                      DateUtils.parseDate((String) map.get("gmtModified"), Constants.DATE_PATTERNS));
+            // url
+            Assert.assertEquals("/global/download?id=" + map.get("version"), map.get("url"));
+        }
+    }
+
+    private void assertResult(JsonResult expectedResult, JsonResult actualResult) {
+        Assert.assertEquals(expectedResult.getErrorCode(), actualResult.getErrorCode());
+        Assert.assertEquals(expectedResult.getMsg(), actualResult.getMsg());
+        if ((expectedResult.getResult() instanceof Global) && (actualResult.getResult() instanceof JSONObject)) {
+            actualResult.setResult(JSON.parseObject(((JSONObject) actualResult.getResult()).toJSONString(),
+                                                    Global.class));
+            // 对比非日期的所有字段
+            ReflectionAssert.assertReflectionEquals(expectedResult, actualResult,
+                                                    ReflectionComparatorMode.LENIENT_DATES);
+            // 模糊对比日期
+            Global expectedGlobal = (Global) expectedResult.getResult();
+            Global actualGlobal = (Global) actualResult.getResult();
+            TestUtils.generallyEquals(expectedGlobal.getGmtCreate(), actualGlobal.getGmtCreate());
+            TestUtils.generallyEquals(expectedGlobal.getGmtModified(), actualGlobal.getGmtModified());
+        }
+        if ((expectedResult.getResult() instanceof ConfigGen) && (actualResult.getResult() instanceof JSONObject)) {
+            actualResult.setResult(JSON.parseObject(((JSONObject) actualResult.getResult()).toJSONString(),
+                                                    ConfigGen.class));
+            // 对比非日期的所有字段
+            ReflectionAssert.assertReflectionEquals(expectedResult, actualResult,
+                                                    ReflectionComparatorMode.LENIENT_DATES);
+            // 模糊对比日期
+            ConfigGen expected = (ConfigGen) expectedResult.getResult();
+            ConfigGen actual = (ConfigGen) actualResult.getResult();
+            TestUtils.generallyEquals(expected.getGmtCreate(), actual.getGmtCreate());
+            TestUtils.generallyEquals(expected.getGmtModified(), actual.getGmtModified());
+        }
+        if ((expectedResult.getResult() instanceof Map) && (actualResult.getResult() instanceof JSONObject)) {
+            actualResult.setResult(JSON.parseObject(((JSONObject) actualResult.getResult()).toJSONString(),
+                                                    HashMap.class));
+            Assert.assertEquals(expectedResult.getResult(), actualResult.getResult());
+        }
+    }
+
+    protected JsonResult createSuccessJsonResult() {
+        JsonResult jsonResult = new JsonResult();
+        jsonResult.setErrorCode(JsonResult.CODE_SUCCESS);
+        jsonResult.setMsg("success");
+        return jsonResult;
+    }
+
+    protected Global createGlobal() throws ParseException {
+        Global global = new Global();
+        global.setSendfile(true);
+        global.setServerNamesHashBucketSize(10);
+        global.setSslSessionCache("shared:SSL:90m");
+        global.setSslSessionTimeout("100m");
+        global.setTcpNodelay(false);
+        global.setTcpNopush(true);
+        global.setUlimit(90);
+        global.setUseEpoll(false);
+        global.setUser("ops");
+        global.setVersion(3);
+        global.setWorkerConnections(90);
+        global.setWorkerProcesses(90);
+        global.setWorkerRlimitNofile(90);
+        global.setGmtCreate(DateUtils.parseDate("2014-12-15 08:59:09", Constants.DATE_PATTERNS));
+        global.setGmtModified(DateUtils.parseDate("2014-12-16 08:59:09", Constants.DATE_PATTERNS));
+        return global;
+    }
+
+}

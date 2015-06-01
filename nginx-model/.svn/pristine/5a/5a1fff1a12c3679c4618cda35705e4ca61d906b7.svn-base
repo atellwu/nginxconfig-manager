@@ -1,0 +1,13 @@
+upstream ${upstream.name} {
+     #if(${isIpHashOn)ip_hash; #end
+     
+     #for(${region2Members} in ${upstream.regions.entrySet()})
+        #if(${region2Members.key} == $region)
+           #set(${members} = ${region2Members.value})
+           #for($server in $members)
+             server ${server.address} weight=${server.weight} max_fails=${server.maxFails} fail_timeout=${server.failTimeout}s;
+           #end
+        #end
+     #end
+#end
+}

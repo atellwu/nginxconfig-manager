@@ -1,0 +1,53 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.google.code.morphia.query.Query;
+import com.google.code.morphia.query.QueryResults;
+import com.yeahmobi.loadbalance_manager.dao.UpstreamDao;
+import com.yeahmobi.loadbalance_manager.model.Upstream;
+import com.yeahmobi.loadbalance_manager.service.UpstreamService;
+
+public class UpstreamServiceImpl implements UpstreamService {
+
+    @Autowired
+    private UpstreamDao dao;
+
+    public void save(Upstream entity) {
+        this.dao.save(entity);
+    }
+
+    public Upstream get(String name) {
+        Query<Upstream> q = this.dao.getDatastore().createQuery(Upstream.class);
+        q.field("name").equal(name);
+
+        QueryResults<Upstream> result = this.dao.find(q);
+        List<Upstream> list = result.asList();
+
+        if ((list != null) && (list.size() > 0)) {
+            return list.get(0);
+        }
+
+        return null;
+    }
+
+    public void del(String name) {
+        Query<Upstream> q = this.dao.getDatastore().createQuery(Upstream.class);
+        q.field("name").equal(name);
+
+        this.dao.deleteByQuery(q);
+    }
+
+    public List<Upstream> listAll() {
+        Query<Upstream> q = this.dao.getDatastore().createQuery(Upstream.class);
+
+        QueryResults<Upstream> result = this.dao.find(q);
+        List<Upstream> list = result.asList();
+
+        return list;
+
+    }
+
+}

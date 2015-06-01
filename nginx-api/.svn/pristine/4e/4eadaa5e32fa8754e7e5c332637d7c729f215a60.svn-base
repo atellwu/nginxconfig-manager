@@ -1,0 +1,16 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+
+@RunWith(value = Suite.class)
+@SuiteClasses(value = { GlobalControllerTest.class,//
+                       UpstreamControllerTest.class,//
+                       VhostControllerTest.class,//
+                       RegionControllerTest.class,//
+                       NodeStatusControllerTest.class,//
+})
+public class ApiTestSuite {
+
+}

@@ -1,0 +1,188 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSON;
+import com.yeahmobi.loadbalance_manager.common.Constants;
+import com.yeahmobi.loadbalance_manager.common.VelocityUtil;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Region;
+import com.yeahmobi.loadbalance_manager.model.Upstream;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+import com.yeahmobi.loadbalance_manager.service.UpstreamService;
+
+/**
+ * @author atell.wu
+ */
+@Controller
+@RequestMapping(value = { "/upstream" })
+public class UpstreamController extends AbstractController {
+
+    private static final String DIR = "upstream/";
+
+    @Autowired
+    private UpstreamService     upstreamService;
+
+    @Autowired
+    private ConfigGenService    configGenService;
+
+    @Autowired
+    private NodeStatusService   nodeStatusService;
+
+    /**
+     * 获取所有upstream
+     */
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object list() {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                List<Upstream> list = UpstreamController.this.upstreamService.listAll();
+
+                result.put("list", list);
+            }
+        });
+    }
+
+    /**
+     * 获取指定upstream
+     */
+    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object get(final String[] names) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                List<Upstream> list = new ArrayList<Upstream>();
+                for (String name : names) {
+                    Upstream upstream = UpstreamController.this.upstreamService.get(name);
+                    list.add(upstream);
+                }
+
+                result.put("list", list);
+            }
+        });
+    }
+
+    /**
+     * 新增或更新一个upstream
+     */
+    @RequestMapping(value = "/save", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object save(final HttpServletRequest request) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) throws IOException {
+                Upstream upstream = _parseParams(request);
+
+                UpstreamController.this.upstreamService.save(upstream);
+
+                // 渲染成Velocity，放到下载表 service.add(fileName,version,config)
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("upstream", upstream);
+                for (Region region : Region.values()) {
+                    map.put("region", region);
+                    UpstreamController.this.configGenService.addUpstream(region,
+                                                                         VelocityUtil.build(map, DIR + "/upstream.conf"));
+                }
+
+                // 获取global最新version返回
+                upstream = UpstreamController.this.upstreamService.get(upstream.getName());
+
+                result.put("version", upstream.getVersion());
+                result.put("lastUpdateTime", upstream.getGmtModified());
+            }
+        });
+    }
+
+    /**
+     * 删除upstream
+     */
+    @RequestMapping(value = "/del", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object del(final String[] names) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) throws IOException {
+                for (String name : names) {
+                    UpstreamController.this.upstreamService.del(name);
+                }
+            }
+        });
+    }
+
+    /**
+     * 下载配置文件
+     */
+    @RequestMapping(value = "/download", method = RequestMethod.GET)
+    @ResponseBody
+    public HttpEntity<String> download(long version, String region) throws IOException {
+        ConfigGen upstream = this.configGenService.getUpstream(Region.valueOf(region), version);
+        String documentBody = upstream.getContent();
+
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(new MediaType("application", "plain/text"));
+        header.set("Content-Disposition", "attachment; filename=" + region + "-upstream.conf");
+
+        return new HttpEntity<String>(documentBody, header);
+    }
+
+    /**
+     * 获取配置文件的信息
+     */
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object info(final String region, final String nodeId) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                // 记录心跳
+                Date lastHeartbeatTime = new Date();
+                Region region0 = Region.valueOf(region);
+                UpstreamController.this.nodeStatusService.update(region0, nodeId, lastHeartbeatTime);
+
+                ConfigGen configGen = UpstreamController.this.configGenService.getLastUpstream(region0);
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("version", configGen.getVersion());
+                String url = "/global/download?fileName=" + configGen.getFileName() + "&version="
+                             + configGen.getVersion();
+                map.put("md5", configGen.getMd5());
+                map.put("url", url);
+                result.put("upstream", configGen);
+            }
+        });
+    }
+
+    /**
+     * 从request中字段解析成keyValue，以map返回
+     *
+     * @throws IOException
+     */
+    private Upstream _parseParams(HttpServletRequest request) throws IOException {
+        ServletInputStream inputStream = request.getInputStream();
+        String str = IOUtils.toString(inputStream, Constants.INPUT_ENCODE);
+        Upstream upstream = JSON.parseObject(str, Upstream.class);
+        return upstream;
+    }
+
+}

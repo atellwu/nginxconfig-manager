@@ -1,0 +1,16 @@
+package com.yeahmobi.loadbalance_manager.model.domain;
+
+import com.yeahmobi.loadbalance_manager.model.AbstractConfig;
+
+public class CustomConfig extends AbstractConfig {
+
+    private String value;
+
+    public String getValue() {
+        return this.value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+}

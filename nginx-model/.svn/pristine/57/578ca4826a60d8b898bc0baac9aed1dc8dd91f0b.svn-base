@@ -1,0 +1,37 @@
+package com.yeahmobi.loadbalance_manager.service;
+
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Region;
+
+public interface ConfigGenService {
+
+    // global
+
+    ConfigGen getGlobal(String module, long version);
+
+    /** 获取最新的 */
+    ConfigGen getLastGlobal(String module);
+
+    void addGlobal(String module, String content);
+
+    // upstream
+
+    ConfigGen getUpstream(Region region, long version);
+
+    /** 获取最新的 */
+    ConfigGen getLastUpstream(Region region);
+
+    void addUpstream(Region region, String content);
+
+    // vhost
+
+    ConfigGen getVhost(String vhostName, String module, long version);
+
+    /** 获取最新的 */
+    ConfigGen getLastVhost(String vhostName, String module);
+
+    void addVhost(String vhostName, String module, String content);
+
+    void delLessThan(long version);
+
+}

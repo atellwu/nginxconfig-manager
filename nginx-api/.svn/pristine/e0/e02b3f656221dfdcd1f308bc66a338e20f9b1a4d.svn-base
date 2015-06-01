@@ -1,0 +1,22 @@
+  upstream testUpstreamA {
+     ip_hash;  
+
+     keepalive 100;   
+
+                       
+     server hostA weight=8 max_fails=5 fail_timeout=10s; 
+          
+     server hostB weight=8 max_fails=5 fail_timeout=10s; 
+                       
+  }
+  upstream testUpstreamB {
+     ip_hash;  
+
+     keepalive 10;   
+
+                                    
+     server hostA weight=8 max_fails=5 fail_timeout=10s; 
+          
+     server hostB weight=8 max_fails=5 fail_timeout=10s; 
+                       
+  }

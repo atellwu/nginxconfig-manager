@@ -1,0 +1,1 @@
+server_name #for($serverName in $config.serverNames) $serverName #end

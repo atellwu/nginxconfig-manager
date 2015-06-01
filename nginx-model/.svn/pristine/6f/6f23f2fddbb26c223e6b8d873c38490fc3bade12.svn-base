@@ -1,0 +1,67 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+import java.util.List;
+
+public class Vhost extends BaseEntity {
+
+    private String       name;
+
+    private int          listenPort;
+
+    private boolean      isDefaultServer;
+
+    private List<String> serverNames;
+
+    private String       upstreamName;
+
+    private String       custom;
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getListenPort() {
+        return this.listenPort;
+    }
+
+    public void setListenPort(int listenPort) {
+        this.listenPort = listenPort;
+    }
+
+    public boolean getIsDefaultServer() {
+        return this.isDefaultServer;
+    }
+
+    public void setIsDefaultServer(boolean isDefaultServer) {
+        this.isDefaultServer = isDefaultServer;
+    }
+
+    public List<String> getServerNames() {
+        return this.serverNames;
+    }
+
+    public void setServerNames(List<String> serverNames) {
+        this.serverNames = serverNames;
+    }
+
+    public String getUpstreamName() {
+        return this.upstreamName;
+    }
+
+    public void setUpstreamName(String upstreamName) {
+        this.upstreamName = upstreamName;
+    }
+
+    public String getCustom() {
+        return this.custom;
+    }
+
+    public void setCustom(String custom) {
+        this.custom = custom;
+    }
+
+}

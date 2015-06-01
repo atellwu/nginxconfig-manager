@@ -1,0 +1,13 @@
+server {
+    listen      ${vhost.listenPort} ${vhost.isDefaultServer}default_server #end;
+
+    include conf.d/vhost/${vhost.name}/server_name.conf;
+    include conf.d/vhost/${vhost.name}/server_custom.conf; 
+
+    root /usr/share/nginx/html;
+    location / {
+        proxy_pass http://${vhost.upstreamName};
+    }
+    access_log  /var/log/nginx/access.log  nginx_access;
+}
+

@@ -1,0 +1,10 @@
+user ${global.user};
+worker_processes  ${global.workProcess};
+error_log  ${global.errorLog};
+pid        ${global.pid};
+worker_rlimit_nofile ${global.workerRlimitNofile};
+events {
+        #if(${global.usePoll})use epoll;#end
+        worker_connections ${global.workerConnections};
+        ulimit ${global.ulimit};
+}

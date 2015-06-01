@@ -1,0 +1,10 @@
+server {
+   listen          $config.port;
+
+   include  server_name.conf;
+
+   include  custom.conf;
+
+   include  upstream.conf;
+
+}

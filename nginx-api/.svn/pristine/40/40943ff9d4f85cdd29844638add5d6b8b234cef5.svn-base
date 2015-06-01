@@ -1,0 +1,9 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.util.Map;
+
+public interface Handler {
+
+    void handle(Map<String, Object> map);
+
+}

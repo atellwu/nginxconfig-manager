@@ -1,0 +1,86 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.List;
+
+import org.apache.commons.lang.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.code.morphia.query.Query;
+import com.google.code.morphia.query.QueryResults;
+import com.google.code.morphia.query.UpdateOperations;
+import com.yeahmobi.loadbalance_manager.dao.VhostDao;
+import com.yeahmobi.loadbalance_manager.model.Vhost;
+import com.yeahmobi.loadbalance_manager.service.VhostService;
+
+@Service
+public class VhostServiceImpl implements VhostService {
+
+    @Autowired
+    private VhostDao dao;
+
+    public void add(Vhost vhost) {
+        Validate.notNull(vhost.getName(), "vhost.name.is.empty");
+        Validate.notNull(vhost.getIsDefaultServer(), "vhost.isDefaultServer.is.empty");
+        Validate.notNull(vhost.getCustom(), "vhost.custom.is.empty");
+        Validate.notNull(vhost.getListenPort(), "vhost.listenPort.is.empty");
+        Validate.notEmpty(vhost.getServerNames(), "vhost.serverNames.is.empty");
+        Validate.notNull(vhost.getUpstreamName(), "vhost.upstreamName.is.empty");
+
+        this.dao.save(vhost);
+    }
+
+    public void update(Vhost vhost) {
+        Validate.notNull(this.dao.get(vhost.getName()), "vhost.name.notExist");
+
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+        q.field("name").equal(vhost.getName());
+
+        UpdateOperations<Vhost> ops = this.dao.createUpdateOperations();
+
+        boolean somethingUpdate = false;
+        if (vhost.getIsDefaultServer() != null) {
+            ops.set("isDefaultServer", vhost.getIsDefaultServer());
+            somethingUpdate = true;
+        }
+        if (vhost.getCustom() != null) {
+            ops.set("custom", vhost.getCustom());
+            somethingUpdate = true;
+        }
+        if (vhost.getListenPort() != null) {
+            ops.set("listenPort", vhost.getListenPort());
+            somethingUpdate = true;
+        }
+        if (vhost.getServerNames() != null) {
+            ops.set("serverNames", vhost.getServerNames());
+            somethingUpdate = true;
+        }
+        if (vhost.getUpstreamName() != null) {
+            ops.set("upstreamName", vhost.getUpstreamName());
+            somethingUpdate = true;
+        }
+
+        Validate.isTrue(somethingUpdate, "vhost.nothingUpdate");
+
+        this.dao.update(q, ops);
+    }
+
+    public Vhost get(String name) {
+        return this.dao.get(name);
+    }
+
+    public void del(String name) {
+        this.dao.deleteById(name);
+    }
+
+    public List<Vhost> listAll() {
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+
+        QueryResults<Vhost> result = this.dao.find(q);
+        List<Vhost> list = result.asList();
+
+        return list;
+
+    }
+
+}

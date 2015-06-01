@@ -1,0 +1,231 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang.Validate;
+import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.yeahmobi.loadbalance_manager.common.VelocityUtil;
+import com.yeahmobi.loadbalance_manager.helper.MapArgument;
+import com.yeahmobi.loadbalance_manager.helper.MapWrapper;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Global;
+import com.yeahmobi.loadbalance_manager.model.NodeStatus;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+import com.yeahmobi.loadbalance_manager.service.GlobalService;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+
+/**
+ * @author atell.wu
+ */
+@Controller
+@Validated
+@RequestMapping(value = { "/global" })
+public class GlobalController extends AbstractController {
+
+    private static final String DIR = "template/global/";
+
+    private static String[]     modules;
+
+    static {
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        try {
+            Resource[] resources = resolver.getResources(DIR + "*");
+            if (resources != null) {
+                modules = new String[resources.length];
+                for (int i = 0; i < resources.length; i++) {
+                    Resource resource = resources[i];
+                    modules[i] = resource.getFilename();
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error when get global resources", e);
+        }
+    }
+
+    @Autowired
+    private GlobalService       globalService;
+
+    @Autowired
+    private ConfigGenService    configGenService;
+
+    @Autowired
+    private NodeStatusService   nodeStatusService;
+
+    /**
+     * 获取所有配置
+     */
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object list() {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                Global global = GlobalController.this.globalService.get();
+
+                Validate.notNull(global, "No config.");
+
+                // result.put("version", global.getVersion());
+                // result.put("lastUpdateTime", global.getGmtModified());
+
+                result.setResult(global);
+            }
+        });
+    }
+
+    /**
+     * 获取指定配置
+     */
+    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object get(@NotEmpty
+    final String[] key) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                Global global = GlobalController.this.globalService.get();
+
+                Map<String, Object> keyValues = filter(global, key);
+
+                Map<String, Object> map = new HashMap<String, Object>();
+
+                map.put("version", global.getVersion());
+                map.put("lastUpdateTime", global.getGmtModified());
+                map.put("keyValues", keyValues);
+
+                result.setResult(map);
+            }
+        });
+    }
+
+    /**
+     * 更新配置
+     */
+    @RequestMapping(value = "/set", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object set(final @MapArgument MapWrapper requestMap) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                Global global = GlobalController.this.globalService.get();
+
+                if (global == null) {
+                    global = new Global();
+                }
+
+                apply(global, requestMap.getMap());
+
+                // TODO 验证 config是否nginx -t -c 通过
+
+                GlobalController.this.globalService.update(global);
+
+                // 渲染成Velocity，放到下载表 service.add(fileName,version,config)
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("global", global);
+                for (String module : modules) {
+                    GlobalController.this.configGenService.addGlobal(module, VelocityUtil.build(map, DIR + module));
+                }
+
+                // 更新所有节点的状态
+                GlobalController.this.nodeStatusService.updateAll(NodeStatus.State.TOBE_UPDATED);
+            }
+        });
+    }
+
+    /**
+     * 下载global配置文件 （直接获取global对象，渲染成Velocity即可下载）
+     */
+    @RequestMapping(value = "/download", method = RequestMethod.GET, produces = "text/plain; charset=utf-8")
+    @ResponseBody
+    public Object download(@NotNull String id) throws IOException {
+        // version实际是直接使用id
+        ConfigGen global = this.configGenService.getGlobal(Integer.valueOf(id));
+        String documentBody = global.getContent();
+
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(MediaType.TEXT_PLAIN);
+        header.set("Content-Disposition", "attachment; filename=" + global.getModule() + ".conf");
+
+        return new HttpEntity<String>(documentBody, header);
+    }
+
+    /**
+     * 获取6个global配置文件的信息
+     */
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object info() {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                // 获取global那6个文件的信息
+                List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+                for (String module : modules) {
+                    ConfigGen configGen = GlobalController.this.configGenService.getLastGlobal(module);
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("module", module);
+                    map.put("version", configGen.getId());
+                    map.put("md5", configGen.getMd5());
+                    map.put("url", "/global/download?id=" + configGen.getId());
+                    list.add(map);
+                }
+
+                result.setResult(list);
+            }
+        });
+    }
+
+    /**
+     * 根据keyValues将bean对应的字段赋值。
+     */
+    private void apply(Global bean, Map<String, String> keyValues) {
+        BeanWrapper beanWrapper = new BeanWrapperImpl(bean);
+        for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            try {
+                beanWrapper.setPropertyValue(key, value);
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException("unknown property found: " + key);
+            }
+        }
+    }
+
+    /**
+     * bean中的字段以keyValue放到map中，且只包含filterKeys
+     */
+    private Map<String, Object> filter(Global bean, String[] filterKeys) {
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        BeanWrapper beanWrapper = new BeanWrapperImpl(bean);
+        for (String key : filterKeys) {
+            try {
+                map.put(key, beanWrapper.getPropertyValue(key));
+            } catch (Exception e) {
+                throw new IllegalArgumentException("unknown property found: " + key);
+            }
+        }
+
+        return map;
+    }
+
+}

@@ -1,0 +1,26 @@
+package com.yeahmobi.loadbalance_manager.dao.common;
+
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.code.morphia.dao.BasicDAO;
+import com.yeahmobi.loadbalance_manager.dao.MongoClient;
+import com.yeahmobi.loadbalance_manager.model.common.CoreConfig;
+
+/**
+ */
+@Service
+public class CoreConfigDao extends BasicDAO<CoreConfig, ObjectId> {
+
+    @Autowired
+    public CoreConfigDao(MongoClient mongoClient) {
+        super(CoreConfig.class, mongoClient.getDatastore());
+        // at application start
+        // map classes before calling with morphia map* methods
+        mongoClient.getMorphia().map(CoreConfig.class);
+        mongoClient.getDatastore().ensureCaps(); // creates capped collections from @Entity
+        mongoClient.getDatastore().ensureIndexes(); // creates indexes from @Index annotations in your entities
+    }
+
+}

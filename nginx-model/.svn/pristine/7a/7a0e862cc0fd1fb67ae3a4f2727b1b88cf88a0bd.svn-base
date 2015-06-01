@@ -1,0 +1,5 @@
+package com.yeahmobi.loadbalance_manager.service.domain;
+
+public interface ServerNameConfigService {
+
+}

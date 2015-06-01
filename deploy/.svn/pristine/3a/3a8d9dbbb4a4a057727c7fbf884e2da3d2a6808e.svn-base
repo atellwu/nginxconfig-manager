@@ -1,0 +1,2 @@
+mongoUrl=mongodb://localhost:27017
+dbName=loadbalance_manager_dev

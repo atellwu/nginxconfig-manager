@@ -1,0 +1,38 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+import java.util.List;
+import java.util.Map;
+
+public class Upstream extends BaseEntity {
+
+    private String                    name;
+
+    private int                       keepalive;
+
+    private Map<Region, List<Member>> regions;
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getKeepalive() {
+        return this.keepalive;
+    }
+
+    public void setKeepalive(int keepalive) {
+        this.keepalive = keepalive;
+    }
+
+    public Map<Region, List<Member>> getRegions() {
+        return this.regions;
+    }
+
+    public void setRegions(Map<Region, List<Member>> regions) {
+        this.regions = regions;
+    }
+
+}

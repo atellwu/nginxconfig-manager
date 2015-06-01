@@ -1,0 +1,113 @@
+package com.yeahmobi.loadbalance_manager.dao;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.code.morphia.Datastore;
+import com.google.code.morphia.Morphia;
+import com.mongodb.Mongo;
+import com.mongodb.MongoOptions;
+import com.mongodb.ServerAddress;
+
+/**
+ * 一个MongoCleint含有一个Mongo实例
+ *
+ * @author atell.wu
+ */
+public class MongoClient {
+
+    private String       dbName = "loadbalance_manager";
+
+    private MongoOptions mongoOptions;
+
+    private Mongo        mongo;
+    private Datastore    datastore;
+    private Morphia      morphia;
+
+    /**
+     * 构造一个MongoClient, 参数dynamicConfig指定服务器地址。
+     */
+    public MongoClient(String configFileUrl) {
+        // 读取properties配置(如果存在configFile，则使用configFile)
+        InputStream in = MongoClient.class.getClassLoader().getResourceAsStream(configFileUrl);
+        MongoConfig config;
+        if (in != null) {
+            config = new MongoConfig(in);
+        } else {
+            config = new MongoConfig();
+        }
+        // 构造mongo选项
+        this.mongoOptions = getMongoOptions(config);
+
+        List<ServerAddress> replicaSetSeeds = parseUriToAddressList(config.getMongoUrl());
+        // 创建mongo实例
+        this.mongo = new Mongo(replicaSetSeeds, this.mongoOptions);
+        // 创建Datastore
+        if (config.getDbName() != null) {
+            this.dbName = config.getDbName();
+        }
+        this.morphia = new Morphia();
+        this.datastore = this.morphia.createDatastore(this.mongo, this.dbName);
+        // morphia.map(PvUrl.class);
+        // at application start
+        // map classes before calling with morphia map* methods
+        // datastore.ensureCaps(); //creates capped collections from @Entity
+        // datastore.ensureIndexes(); //creates indexes from @Index annotations in your entities
+    }
+
+    private List<ServerAddress> parseUriToAddressList(String uri) {
+        uri = uri.trim();
+        String schema = "mongodb://";
+        if (uri.startsWith(schema)) { // 兼容老各式uri
+            uri = uri.substring(schema.length());
+        }
+        String[] hostPortArr = uri.split(",");
+        List<ServerAddress> result = new ArrayList<ServerAddress>();
+        for (int i = 0; i < hostPortArr.length; i++) {
+            String[] pair = hostPortArr[i].split(":");
+            try {
+                result.add(new ServerAddress(pair[0].trim(), Integer.parseInt(pair[1].trim())));
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e.getMessage() + ". Bad format of mongo uri：" + uri
+                                                   + ". The correct format is mongodb://<host>:<port>,<host>:<port>", e);
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static MongoOptions getMongoOptions(MongoConfig config) {
+        MongoOptions options = new MongoOptions();
+        options.slaveOk = config.isSlaveOk();
+        options.socketKeepAlive = config.isSocketKeepAlive();
+        options.socketTimeout = config.getSocketTimeout();
+        options.connectionsPerHost = config.getConnectionsPerHost();
+        options.threadsAllowedToBlockForConnectionMultiplier = config.getThreadsAllowedToBlockForConnectionMultiplier();
+        options.w = config.getW();
+        options.wtimeout = config.getWtimeout();
+        options.fsync = config.isFsync();
+        options.connectTimeout = config.getConnectTimeout();
+        options.maxWaitTime = config.getMaxWaitTime();
+        options.autoConnectRetry = config.isAutoConnectRetry();
+        options.safe = config.isSafe();
+        return options;
+    }
+
+    public Datastore getDatastore() {
+        return this.datastore;
+    }
+
+    public Mongo getMongo() {
+        return this.mongo;
+    }
+
+    public Morphia getMorphia() {
+        return this.morphia;
+    }
+
+    public String getDbName() {
+        return this.dbName;
+    }
+
+}

@@ -1,0 +1,23 @@
+package com.yeahmobi.loadbalance_manager.service;
+
+import java.util.List;
+
+import com.yeahmobi.loadbalance_manager.model.Vhost;
+
+public interface VhostService {
+
+    /** 添加vhost */
+    void add(Vhost vhost);
+
+    /** 查询vhost */
+    Vhost get(String name);
+
+    /** 删除vhost */
+    void del(String name);
+
+    /** 更新vhost */
+    void update(Vhost vhost);
+
+    /** 查询vhost */
+    List<Vhost> listAll();
+}

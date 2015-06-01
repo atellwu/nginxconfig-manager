@@ -1,0 +1,7 @@
+package com.yeahmobi.loadbalance_manager.model.domain;
+
+import com.yeahmobi.loadbalance_manager.model.AbstractConfig;
+
+public class UpstreamConfig extends AbstractConfig {
+
+}

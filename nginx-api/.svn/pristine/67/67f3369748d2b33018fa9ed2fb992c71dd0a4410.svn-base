@@ -1,0 +1,31 @@
+{"ConfigGen": [
+],
+    "Vhost": [
+        {
+            "_id": "testVhostA",
+            "custom": "custom",
+            "upstreamName": "testUpstreamA",
+            "isDefaultServer": false,
+            "listenPort": 9090,
+            "serverNames":  [
+                   "serverA","serverB","serverC"
+            ],
+            "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+        },
+        {
+            "_id": "testVhostB",
+            "custom": "custom",
+            "upstreamName": "testUpstreamA",
+            "isDefaultServer": false,
+            "listenPort": 9090,
+            "serverNames":  [
+                   "serverA","serverB","serverC"
+            ],
+            "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+        }
+    ]
+}

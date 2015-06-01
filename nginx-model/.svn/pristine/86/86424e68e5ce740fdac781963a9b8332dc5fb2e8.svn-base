@@ -1,0 +1,17 @@
+include base.conf
+
+http {
+
+     include http.conf
+     include proxy.conf
+     
+     ##
+     # Virtual Host Configs
+     ##
+
+     server {
+         include server.conf
+         include <domain>/main.conf;
+     }
+}
+

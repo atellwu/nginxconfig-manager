@@ -1,0 +1,87 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.google.code.morphia.query.Query;
+import com.google.code.morphia.query.QueryResults;
+import com.yeahmobi.loadbalance_manager.common.MD5Util;
+import com.yeahmobi.loadbalance_manager.dao.ConfigGenDao;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Region;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+
+public class ConfigGenServiceImpl implements ConfigGenService {
+
+    @Autowired
+    private ConfigGenDao dao;
+
+    public ConfigGen getGlobal(String fileName, long version) {
+        Query<ConfigGen> q = this.dao.getDatastore().createQuery(ConfigGen.class);
+        q.field("fileName").equal(fileName);
+        q.field("type").equal(ConfigGen.Type.GLOBAL);
+        q.field("version").equal(version);
+
+        QueryResults<ConfigGen> result = this.dao.find(q);
+        List<ConfigGen> list = result.asList();
+
+        if ((list != null) && (list.size() > 0)) {
+            return list.get(0);
+        }
+
+        return null;
+    }
+
+    public void addGlobal(String fileName, String content) {
+        ConfigGen configGen = new ConfigGen();
+        configGen.setContent(content);
+        configGen.setFileName(fileName);
+        configGen.setType(ConfigGen.Type.GLOBAL);
+        configGen.setMd5(MD5Util.generateMD5(content));
+
+        this.dao.save(configGen);
+    }
+
+    public void delLessThan(long version) {
+        Query<ConfigGen> q = this.dao.getDatastore().createQuery(ConfigGen.class);
+        q.field("version").lessThan(version);
+        this.dao.deleteByQuery(q);
+    }
+
+    public ConfigGen getUpstream(Region region, long version) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public ConfigGen getVhost(String vhostName, String fileName, long version) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public void addUpstream(Region region, String content) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public void addVhost(String vhostName, String fileName, String content) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public ConfigGen getLastGlobal(String fileName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public ConfigGen getLastUpstream(Region region) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public ConfigGen getLastVhost(String vhostName, String fileName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+}

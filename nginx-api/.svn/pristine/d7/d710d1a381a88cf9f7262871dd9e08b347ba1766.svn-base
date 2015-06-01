@@ -1,0 +1,242 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.yeahmobi.loadbalance_manager.common.Constants;
+import com.yeahmobi.loadbalance_manager.common.VelocityUtil;
+import com.yeahmobi.loadbalance_manager.helper.JsonArgument;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Member;
+import com.yeahmobi.loadbalance_manager.model.NodeStatus;
+import com.yeahmobi.loadbalance_manager.model.Region;
+import com.yeahmobi.loadbalance_manager.model.Upstream;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+import com.yeahmobi.loadbalance_manager.service.RegionService;
+import com.yeahmobi.loadbalance_manager.service.UpstreamService;
+
+/**
+ * @author atell.wu
+ */
+@Controller
+@Validated
+@RequestMapping(value = { "/upstream" })
+public class UpstreamController extends AbstractController {
+
+    private static final String DIR = "template/upstreams/";
+
+    @Autowired
+    private UpstreamService     upstreamService;
+
+    @Autowired
+    private RegionService       regionService;
+
+    @Autowired
+    private ConfigGenService    configGenService;
+
+    @Autowired
+    private NodeStatusService   nodeStatusService;
+
+    /**
+     * 获取所有upstream
+     */
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object list() {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                List<Upstream> list = UpstreamController.this.upstreamService.listAll();
+
+                result.setResult(list);
+            }
+        });
+    }
+
+    /**
+     * 获取指定upstream
+     */
+    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String get(@NotEmpty
+    final String[] name) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                List<Upstream> list = new ArrayList<Upstream>();
+                for (String name0 : name) {
+                    Upstream upstream = UpstreamController.this.upstreamService.get(name0);
+                    list.add(upstream);
+                }
+
+                result.setResult(list);
+            }
+        });
+    }
+
+    /**
+     * 新增或更新一个upstream(要求post的content-type是application/json)
+     */
+    @RequestMapping(value = "/save", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String save(@NotNull
+    @Valid
+    final @JsonArgument Upstream upstream) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) throws IOException {
+                Upstream origionUpstream = UpstreamController.this.upstreamService.get(upstream.getName());
+
+                List<Region> regionsNeedToBoUpdated = UpstreamController.this.regionService.listAll();
+                if (origionUpstream != null) {
+                    // 判断upstream 是更新了哪个region，更新相应的region的Node的状态
+                    regionsNeedToBoUpdated = compare(origionUpstream, upstream, regionsNeedToBoUpdated);
+
+                    UpstreamController.this.upstreamService.update(upstream);
+                } else {
+                    UpstreamController.this.upstreamService.add(upstream);
+                }
+
+                // 渲染成Velocity，作为新版本，放到下载表
+                newUpstreamConfigGen(regionsNeedToBoUpdated);
+
+                for (Region region : regionsNeedToBoUpdated) {
+                    UpstreamController.this.nodeStatusService.update(region.getName(), NodeStatus.State.TOBE_UPDATED);
+                }
+
+            }
+
+        });
+    }
+
+    /**
+     * 删除upstream
+     */
+    @RequestMapping(value = "/del", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String del(@NotEmpty
+    final String[] name) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) throws IOException {
+                for (String name0 : name) {
+                    UpstreamController.this.upstreamService.del(name0);
+                }
+
+                // 渲染成Velocity，作为新版本，放到下载表
+                List<Region> regions = UpstreamController.this.regionService.listAll();
+                newUpstreamConfigGen(regions);
+
+                // 更新所有节点的状态
+                UpstreamController.this.nodeStatusService.updateAll(NodeStatus.State.TOBE_UPDATED);
+            }
+        });
+    }
+
+    /**
+     * 下载配置文件
+     */
+    @RequestMapping(value = "/download", method = RequestMethod.GET)
+    @ResponseBody
+    public Object download(@NotNull Long id) throws IOException {
+        ConfigGen upstream = this.configGenService.getUpstream(id);
+        String documentBody = upstream.getContent();
+
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(new MediaType("application", "plain/text"));
+        header.set("Content-Disposition", "attachment; filename=" + upstream.getRegion() + "-upstream.conf");
+
+        return new HttpEntity<String>(documentBody, header);
+    }
+
+    /**
+     * 获取配置文件的信息
+     */
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String info(@NotBlank
+    final String region, @NotBlank
+    final String nodeId) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                ConfigGen configGen = UpstreamController.this.configGenService.getLastUpstream(region);
+
+                Map<String, Object> map = new HashMap<String, Object>();
+
+                map.put("version", configGen.getId());
+                map.put("md5", configGen.getMd5());
+                map.put("gmtModified", DateFormatUtils.format(configGen.getGmtModified(), Constants.DATE_PATTERN));
+                map.put("url", "/upstream/download?id=" + configGen.getId());
+
+                result.setResult(map);
+            }
+        });
+    }
+
+    /**
+     * 判断变化了什么， 如果是共有配置，则返回所有区。否则返回对应的更新的region。
+     *
+     * @param allRegions
+     */
+    private List<Region> compare(Upstream origion, Upstream current, List<Region> allRegions) {
+        List<Region> list = new ArrayList<Region>();
+        if (origion.equals(current)) {
+            return list;
+        }
+        // 修改了基本upstream属性，所有region区域都要更新
+        if (!origion.getName().equals(current.getName()) || (origion.getKeepalive() != current.getKeepalive())
+            || !(origion.getIpHash().equals(current.getIpHash()))) {
+            return allRegions;
+        }
+
+        Map<String, List<Member>> origionRegions = origion.getRegions();
+        Map<String, List<Member>> currentRegions = current.getRegions();
+
+        // 遍历新的currentRegions，如果有新增的region或修改，则加入list（不能删除region，删除其实也是修改，如删除region下的所有server）
+        for (Entry<String, List<Member>> currentEntry : currentRegions.entrySet()) {
+            String region = currentEntry.getKey();
+            List<Member> currentMembers = currentEntry.getValue();
+            List<Member> originMembers = (origionRegions == null) ? null : origionRegions.get(region);
+            if ((originMembers == null) || !originMembers.equals(currentMembers)) {
+                list.add(new Region(region));
+            }
+        }
+
+        return list;
+    }
+
+    private void newUpstreamConfigGen(List<Region> regions) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        List<Upstream> upstreams = UpstreamController.this.upstreamService.listAll();
+        map.put("upstreams", upstreams);
+
+        for (Region region : regions) {
+            map.put("region", region);
+            UpstreamController.this.configGenService.addUpstream(region.getName(),
+                                                                 VelocityUtil.build(map, DIR + "upstreams"));
+        }
+    }
+
+}

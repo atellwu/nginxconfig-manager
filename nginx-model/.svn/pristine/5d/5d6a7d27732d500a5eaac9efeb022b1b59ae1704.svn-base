@@ -1,0 +1,6 @@
+location ~ /.svn/ {
+    deny all;
+}
+location ~* ^.+\.(jpg|jpeg|gif|png|bmp|css|js|ICO|ico)$ {
+    access_log off;
+}

@@ -1,0 +1,17 @@
+package com.yeahmobi.loadbalance_manager.model.domain;
+
+import com.yeahmobi.loadbalance_manager.model.AbstractConfig;
+
+public class DomainConfig extends AbstractConfig {
+
+    private int port = 80;
+
+    public int getPort() {
+        return this.port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+}

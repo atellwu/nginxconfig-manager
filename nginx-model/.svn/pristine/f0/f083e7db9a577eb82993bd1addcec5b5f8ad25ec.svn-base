@@ -1,0 +1,37 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.Date;
+
+import com.yeahmobi.loadbalance_manager.model.NodeStatus;
+import com.yeahmobi.loadbalance_manager.model.Region;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+
+
+public class NodeStatusServiceImpl implements NodeStatusService {
+
+    public void updateAll(NodeStatus status) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public void update(Region region, NodeStatus status) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public void update(Region region, String nodeId, Date lastHeartbeatTime) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public NodeStatus get(String fileName, long version) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    public void update(Region region, String nodeId, NodeStatus status) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+}

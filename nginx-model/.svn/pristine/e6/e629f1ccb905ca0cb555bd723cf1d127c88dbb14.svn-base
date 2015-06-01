@@ -1,0 +1,13 @@
+package com.yeahmobi.loadbalance_manager.service.common;
+
+import com.yeahmobi.loadbalance_manager.model.common.CoreConfig;
+
+// 参数验证：使用aop对save的操作进行验证，CoreConfig类添加验证的注解，aop统一对所有字段进行验证
+public interface CoreConfigService {
+
+    void save(CoreConfig config);
+
+    CoreConfig get();
+
+    void update(String key, String value);
+}

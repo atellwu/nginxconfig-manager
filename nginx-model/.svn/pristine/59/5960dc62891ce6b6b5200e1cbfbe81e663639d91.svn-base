@@ -1,0 +1,13 @@
+server {
+    listen       80 default_server;
+
+    include conf.d/vhost/ndpsearch.com/server_name.conf;
+    include conf.d/vhost/ndpsearch.com/server_custom.conf; 
+
+    root /usr/share/nginx/html;
+    location / {
+        proxy_pass http://upstream1;
+    }
+    access_log  /var/log/nginx/access.log  nginx_access;
+}
+

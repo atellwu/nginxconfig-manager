@@ -1,0 +1,186 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.yeahmobi.loadbalance_manager.common.VelocityUtil;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Global;
+import com.yeahmobi.loadbalance_manager.model.Region;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+import com.yeahmobi.loadbalance_manager.service.GlobalService;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+
+/**
+ * @author wukezhu
+ */
+@Controller
+@RequestMapping(value = { "/global" })
+public class GlobalController extends AbstractController {
+
+    private static final String DIR     = "global/";
+
+    // private static final Logger LOGGER = LoggerFactory.getLogger(GlobalController.class);
+    private static String[]     modules = { "global_base", "global_http", "global_http_custom", "global_mimetypes",
+            "global_proxy", "global_server_custom" };
+
+    @Autowired
+    private GlobalService       globalService;
+
+    @Autowired
+    private ConfigGenService    configGenService;
+
+    @Autowired
+    private NodeStatusService   nodeStatusService;
+
+    /**
+     * 获取所有配置
+     */
+    @RequestMapping(value = "/getAll", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object getAll() {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                Global global = GlobalController.this.globalService.get();
+
+                result.put("version", global.getVersion());
+                result.put("lastUpdateTime", global.getGmtModified());
+
+                result.put("configs", global);
+            }
+        });
+    }
+
+    /**
+     * 获取指定配置
+     */
+    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object get(final String[] keys) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                Global global = GlobalController.this.globalService.get();
+
+                Map<String, String> keyValues = filter(global, keys);
+
+                result.put("version", global.getVersion());
+                result.put("lastUpdateTime", global.getGmtModified());
+                result.put("configs", keyValues);
+            }
+        });
+    }
+
+    /**
+     * 更新配置
+     */
+    @RequestMapping(value = "/set", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object set(final HttpServletRequest request) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                Map<String, String> keyValues = parseParams(request);
+
+                Global global = GlobalController.this.globalService.get();
+
+                apply(global, keyValues);
+
+                // TODO 验证 config是否nginx -t -c 通过
+
+                GlobalController.this.globalService.update(global);
+
+                // 渲染成Velocity，放到下载表 service.add(fileName,version,config)
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("global", global);
+                for (String module : modules) {
+                    GlobalController.this.configGenService.addGlobal(module, VelocityUtil.build(map, DIR + module));
+                }
+
+                // 获取global最新version返回
+                global = GlobalController.this.globalService.get();
+
+                result.put("version", global.getVersion());
+                result.put("lastUpdateTime", global.getGmtModified());
+            }
+        });
+    }
+
+    /**
+     * 下载global配置文件 （直接获取global对象，渲染成Velocity即可下载）
+     *
+     * @param fileName
+     */
+    @RequestMapping(value = "/download", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object download(long version, String fileName) {
+        // TODO 改为http下载的header
+        ConfigGen global = this.configGenService.getGlobal(fileName, version);
+
+        return global.getContent();
+    }
+
+    /**
+     * 获取6个global配置文件的信息
+     */
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object info(final Region region, final String nodeId) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                // 记录心跳
+                Date lastHeartbeatTime = new Date();
+                GlobalController.this.nodeStatusService.update(region, nodeId, lastHeartbeatTime);
+
+                // 获取global那6个文件的信息
+                for (String module : modules) {
+                    ConfigGen global = GlobalController.this.configGenService.getLastGlobal(module);
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("version", global.getVersion());
+                    String url = "/global/download?fileName=" + global.getFileName() + "&version="
+                                 + global.getVersion();
+                    map.put("md5", global.getMd5());
+                    map.put("url", url);
+                    result.put(module, map);
+                }
+
+            }
+        });
+    }
+
+    /**
+     * 根据keyValues将bean对应的字段赋值。
+     */
+    protected void apply(Global bean, Map<String, String> keyValues) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    /**
+     * bean中的字段以keyValue放到map中，且过滤掉filterKeys
+     */
+    protected Map<String, String> filter(Global bean, String[] filterKeys) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Auto-generated method stub");
+    }
+
+    /**
+     * 从request中字段解析成keyValue，以map返回
+     */
+    protected Map<String, String> parseParams(HttpServletRequest request) {
+        Map<String, String> map = new HashMap<String, String>();
+        // TODO request
+        return map;
+    }
+}

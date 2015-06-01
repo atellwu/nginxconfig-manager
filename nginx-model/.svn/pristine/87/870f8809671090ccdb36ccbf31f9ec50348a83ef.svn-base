@@ -1,0 +1,80 @@
+package com.yeahmobi.loadbalance_manager.model.common;
+
+import com.yeahmobi.loadbalance_manager.model.AbstractConfig;
+
+public class CoreConfig extends AbstractConfig {
+
+    private String  user;
+    private String  pid;
+    private Boolean useEpoll;
+    private Integer workerConnections;
+    private Integer ulimit;
+    private Boolean sendfile;
+    private Boolean resetTimedoutConnection;
+    private Boolean tcpNopush;
+
+    public String getUser() {
+        return this.user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPid() {
+        return this.pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    public Boolean getUseEpoll() {
+        return this.useEpoll;
+    }
+
+    public void setUseEpoll(Boolean useEpoll) {
+        this.useEpoll = useEpoll;
+    }
+
+    public Integer getWorkerConnections() {
+        return this.workerConnections;
+    }
+
+    public void setWorkerConnections(Integer workerConnections) {
+        this.workerConnections = workerConnections;
+    }
+
+    public Integer getUlimit() {
+        return this.ulimit;
+    }
+
+    public void setUlimit(Integer ulimit) {
+        this.ulimit = ulimit;
+    }
+
+    public Boolean getSendfile() {
+        return this.sendfile;
+    }
+
+    public void setSendfile(Boolean sendfile) {
+        this.sendfile = sendfile;
+    }
+
+    public Boolean getResetTimedoutConnection() {
+        return this.resetTimedoutConnection;
+    }
+
+    public void setResetTimedoutConnection(Boolean resetTimedoutConnection) {
+        this.resetTimedoutConnection = resetTimedoutConnection;
+    }
+
+    public Boolean getTcpNopush() {
+        return this.tcpNopush;
+    }
+
+    public void setTcpNopush(Boolean tcpNopush) {
+        this.tcpNopush = tcpNopush;
+    }
+
+}

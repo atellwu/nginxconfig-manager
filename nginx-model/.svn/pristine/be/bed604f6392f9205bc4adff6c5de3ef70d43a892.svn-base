@@ -1,0 +1,10 @@
+package com.yeahmobi.loadbalance_manager.service.domain;
+
+import com.yeahmobi.loadbalance_manager.model.domain.CustomConfig;
+
+public interface CustomConfigService {
+
+    void save(CustomConfig config);
+
+    CustomConfig get();
+}

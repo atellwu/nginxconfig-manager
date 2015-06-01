@@ -1,0 +1,3 @@
+
+<textarea style="display: none" id="input-source">#include("docs/${doc}.md")</textarea>
+<div id="viewer"></div>

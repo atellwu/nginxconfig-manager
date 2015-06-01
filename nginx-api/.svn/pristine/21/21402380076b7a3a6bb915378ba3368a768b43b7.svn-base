@@ -1,0 +1,130 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.fastjson.JSON;
+import com.yeahmobi.loadbalance_manager.model.Global;
+
+/**
+ * @author wukezhu
+ */
+public class AbstractController {
+
+    private static final Logger LOGGER            = LoggerFactory.getLogger(AbstractController.class);
+
+    private static final String ERROR_CODE        = "errorCode";
+    private static final int    CODE_SUCCESS      = 0;
+    private static final int    CODE_PARAM_ERROR  = 1;
+    private static final int    CODE_SERVER_ERROR = 2;
+
+    private static final String MSG               = "msg";
+
+    protected Object json(Handler handler) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        try {
+            Map<String, Object> result = new HashMap<String, Object>();
+            handler.handle(result);
+
+            map.put("result", result);
+            map.put(ERROR_CODE, CODE_SUCCESS);
+        } catch (IllegalArgumentException e) {
+            map.put(ERROR_CODE, CODE_PARAM_ERROR);
+            map.put(MSG, e.getMessage());
+        } catch (Exception e) {
+            map.put(ERROR_CODE, CODE_SERVER_ERROR);
+            map.put(MSG, e.getMessage());
+            LOGGER.error(e.getMessage(), e);
+        }
+        return JSON.toJSONString(map);
+    }
+
+    /**
+     * 根据keyValues将bean对应的字段赋值。
+     */
+    protected void apply(Global bean, Map<String, String> keyValues) {
+        Class clazz = bean.getClass();
+        for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            Field field = null;
+            try {
+                field = clazz.getDeclaredField(key.trim());
+            } catch (Exception e) {
+                LOGGER.error("unknown property found: " + key);
+                continue;
+            }
+            field.setAccessible(true);
+            if (field.getType().equals(Integer.TYPE)) {
+                try {
+                    field.set(this, Integer.parseInt(value.trim()));
+                } catch (Exception e) {
+                    LOGGER.error("can not parse property " + key, e);
+                    continue;
+                }
+            } else if (field.getType().equals(Long.TYPE)) {
+                try {
+                    field.set(this, Long.parseLong(value.trim()));
+                } catch (Exception e) {
+                    LOGGER.error("can not set property " + key, e);
+                    continue;
+                }
+            } else if (field.getType().equals(String.class)) {
+                try {
+                    field.set(this, value.trim());
+                } catch (Exception e) {
+                    LOGGER.error("can not set property " + key, e);
+                    continue;
+                }
+            } else {
+                try {
+                    field.set(this, Boolean.parseBoolean(value.trim()));
+                } catch (Exception e) {
+                    LOGGER.error("can not set property " + key, e);
+                    continue;
+                }
+            }
+        }
+
+        if (LOGGER.isDebugEnabled()) {
+            Field[] fields = clazz.getDeclaredFields();
+            for (int i = 0; i < fields.length; i++) {
+                Field f = fields[i];
+                f.setAccessible(true);
+                if (!Modifier.isStatic(f.getModifiers())) {
+                    try {
+                        LOGGER.debug(f.getName() + "=" + f.get(this));
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * bean中的字段以keyValue放到map中，且只包含filterKeys
+     */
+    protected Map<String, Object> filter(Global bean, String[] filterKeys) {
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        Class clazz = bean.getClass();
+        for (String key : filterKeys) {
+            Field field = null;
+            try {
+                field = clazz.getDeclaredField(key.trim());
+                map.put(key, field.get(bean));
+            } catch (Exception e) {
+                LOGGER.warn("unknown property found: " + key);
+                continue;
+            }
+        }
+
+        return map;
+    }
+
+}

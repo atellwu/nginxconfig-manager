@@ -1,0 +1,43 @@
+package com.yeahmobi.loadbalance_manager.dao;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.google.code.morphia.Datastore;
+import com.google.code.morphia.Key;
+import com.google.code.morphia.dao.BasicDAO;
+import com.mongodb.WriteConcern;
+import com.yeahmobi.loadbalance_manager.model.BaseEntity;
+
+/**
+ */
+public class MongoBaseDao<T extends BaseEntity> extends BasicDAO<T, Long> {
+
+    @Autowired
+    protected SeqGeneratorService seqGeneratorService;
+
+    public MongoBaseDao(Datastore ds) {
+        super(ds);
+    }
+
+    @Override
+    public Key<T> save(T entity) {
+        generateIdIfNeeded(entity);
+        return this.ds.save(entity);
+    }
+
+    @Override
+    public Key<T> save(T entity, WriteConcern wc) {
+        generateIdIfNeeded(entity);
+        return this.ds.save(entity, wc);
+    }
+
+    /**
+     * @param entity
+     */
+    private void generateIdIfNeeded(T entity) {
+        if (entity.getId() == null) {
+            entity.setId(this.seqGeneratorService.nextSeq(entity.getClass().getName()));
+        }
+    }
+
+}

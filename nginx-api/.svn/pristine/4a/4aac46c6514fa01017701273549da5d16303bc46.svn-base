@@ -1,0 +1,95 @@
+{"ConfigGen": [
+],
+    "Region": [
+      {
+	  "_id" : "testRegionA",
+	  "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+      },
+      {
+	  "_id" : "testRegionB",
+	  "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+      }
+    ],
+    "Upstream": [
+        {
+            "_id": "testUpstreamA",
+            "ipHash": true,
+            "keepalive": 10,
+            "regions": {
+                "testRegionA": [
+                    {
+                        "host": "hostA",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    },
+                    {
+                        "host": "hostB",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    }
+                ],
+                "testRegionB": [
+                    {
+                        "host": "hostA",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    },
+                    {
+                        "host": "hostB",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    }
+                ]
+            },
+            "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+        },
+        {
+            "_id": "testUpstreamB",
+            "ipHash": true,
+            "keepalive": 10,
+            "regions": {
+                "testRegionA": [
+                    {
+                        "host": "hostA",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    },
+                    {
+                        "host": "hostB",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    }
+                ],
+                "testRegionB": [
+                    {
+                        "host": "hostA",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    },
+                    {
+                        "host": "hostB",
+                        "maxFails": 5,
+                        "failTimeout": "10s",
+                        "weight": "8"
+                    }
+                ]
+            },
+            "version": 1,
+            "gmtCreate": "2014-12-15T08:59:09.172Z",
+            "gmtModified": "2014-12-16T08:59:09.172Z"
+        }
+    ]
+}

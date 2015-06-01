@@ -1,0 +1,19 @@
+package com.yeahmobi.loadbalance_manager.model.domain;
+
+import java.util.List;
+
+import com.yeahmobi.loadbalance_manager.model.AbstractConfig;
+
+public class ServerNameConfig extends AbstractConfig {
+
+    private List<String> serverNames;
+
+    public List<String> getServerNames() {
+        return this.serverNames;
+    }
+
+    public void setServerNames(List<String> serverNames) {
+        this.serverNames = serverNames;
+    }
+
+}

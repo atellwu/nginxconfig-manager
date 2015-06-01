@@ -1,0 +1,32 @@
+/**
+ * Project: alpaca-admin File Created at 2012-4-9 $Id$ Copyright 2010 dianping.com. All rights reserved. This software
+ * is the confidential and proprietary information of Dianping Company. ("Confidential Information"). You shall not
+ * disclose such Confidential Information and shall use it only in accordance with the terms of the license agreement
+ * you entered into with dianping.com.
+ */
+package com.yeahmobi.loadbalance_manager.dao.common;
+
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.code.morphia.dao.BasicDAO;
+import com.yeahmobi.loadbalance_manager.dao.MongoClient;
+import com.yeahmobi.loadbalance_manager.model.common.ServerConfig;
+
+/**
+ */
+@Service
+public class ServerConfigDao extends BasicDAO<ServerConfig, ObjectId> {
+
+    @Autowired
+    public ServerConfigDao(MongoClient mongoClient) {
+        super(ServerConfig.class, mongoClient.getDatastore());
+        // at application start
+        // map classes before calling with morphia map* methods
+        mongoClient.getMorphia().map(ServerConfig.class);
+        mongoClient.getDatastore().ensureCaps(); // creates capped collections from @Entity
+        mongoClient.getDatastore().ensureIndexes(); // creates indexes from @Index annotations in your entities
+    }
+
+}

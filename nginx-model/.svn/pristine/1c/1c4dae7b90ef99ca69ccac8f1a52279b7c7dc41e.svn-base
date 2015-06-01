@@ -1,0 +1,73 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.google.code.morphia.annotations.Id;
+import com.google.code.morphia.annotations.Indexed;
+import com.google.code.morphia.annotations.PrePersist;
+
+/**
+ */
+public class BaseEntity implements Serializable {
+
+    private static final long serialVersionUID = 8121775127353895008L;
+
+    @Id
+    private Long              id;
+
+    private Date              gmtCreate;
+
+    private Date              gmtModified;
+
+    @Indexed(unique = true)
+    private Long              version;
+
+    @PrePersist
+    public void prePersist() {
+        Date now = new Date();
+        if (this.gmtCreate == null) {
+            this.gmtCreate = now;
+        }
+        this.gmtModified = now;
+
+        if (this.version == null) {
+            this.version = 1L;
+        } else {
+            this.version++;
+        }
+    }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Date getGmtCreate() {
+        return this.gmtCreate;
+    }
+
+    public void setGmtCreate(Date gmtCreate) {
+        this.gmtCreate = gmtCreate;
+    }
+
+    public Date getGmtModified() {
+        return this.gmtModified;
+    }
+
+    public void setGmtModified(Date gmtModified) {
+        this.gmtModified = gmtModified;
+    }
+
+    public Long getVersion() {
+        return this.version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+}

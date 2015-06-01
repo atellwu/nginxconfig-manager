@@ -1,0 +1,224 @@
+## Upstream配置
+* * *
+### upstream/save
+* * *
+* **功能**  
+  
+  修改/新增 Upstream，upstream 不存在则新增，存在则是修改
+
+* **请求方式**  
+  
+  URL: /upstream/save   
+  Method: POST  
+  Content-Type: application/json 
+
+  
+* **请求参数**
+
+  {"name":"\[upstream名称\]","keepalive":\[keepalive\],"ipHash":true或false,"regions":{"\[区域名称\]":[{"host":"\[服务节点host\]","maxFails":"\[maxFails\]","failTimeout":"\[failTimeout\]","weight":"\[weight\]"}]}}
+
+  取值解释如下：
+  
+| 参数    | 说明             | 是否必须                        |
+|:------------: |:----------------:| :-------------------------:|
+| name                  | 每个upstream都有一个唯一的名称 | 是 |
+| keepalive       | 对应 upstream 下的 keepalive 配置项 | 否 |
+| ipHash              | 对应 upstream 下的 ipHash 配置项 | 否 |
+| regions              | 各个区域，有不同的节点服务器组，regions中，key是"\[区域名称\]"，value是多个节点的数组 | 否 |
+
+  regions下的参数解释：
+
+| 参数    | 说明             | 是否必须                        |
+|:------------: |:----------------:| :-------------------------:|
+| 区域名称                   | 区域名称，取值见regions的说明  | 是 |
+| host              | 节点的host，即upstream下server的地址 | 是 |
+| maxFails     | 对应 nginx 配置中 server 配置项的 maxFails | 否 |
+| failTimeout    | 对应 nginx 配置中 server 配置项的 failTimeout | 否 |
+| weight                | 对应 nginx 配置中 server 配置项的 weight | 否 |
+
+* **返回数据(只解释 result 字段，其他字段含义见前面)**
+
+ result字段永远为空
+
+* **请求例子(只列举部分)**
+
+ ```
+ 成功例子:  
+ 请求：curl -H "Content-Type: application/json" -d '{"name":"upstreamA","regions":{"Hongkong":[{"host":"127.0.0.1:8080"}]}}' http://localhost:8080/upstream/save
+ 返回：
+  {"errorCode":0,"msg":"success","result":""}
+ ```
+
+ ```
+ 错误的例子: （region 取值不是正确的区域，会报错）  
+ 请求：curl -H "Content-Type: application/json" -d '{"name":"upstreamA","regions":{"someRegion":[{"host":"127.0.0.1:8080"}]}}' http://localhost:8080/upstream/save
+ 返回：
+  {"errorCode":1,"msg":"指定的region不存在，请检查region是否正确","result":""}
+ ```
+ 
+* * *
+### upstream/del
+* * *
+* **功能**  
+
+  删除指定的 upstream  
+
+* **请求方式**  
+  
+  URL: /upstream/del   
+  Method: POST  
+  Content-Type: application/x-www-form-urlencoded
+  
+* **请求参数**
+
+  name=\[someName1\]&key=\[someName2\]
+
+* **返回数据(只解释 result 字段，其他字段含义见前面)**
+  
+  result 字段为空
+
+* **请求例子(只列举部分)**
+
+ ```
+ 成功例子:  
+ 请求：curl -H "Content-Type: application/x-www-form-urlencoded" -d 'name=upstreamA&name=upstreamB' http://localhost:8080/upstream/del
+ 返回：
+  {"errorCode":0,"msg":"success","result":""}
+ ```
+
+ ```
+ 错误的例子:  
+ 请求：curl -H "Content-Type: application/x-www-form-urlencoded" -d 'name=someName' http://localhost:8080/upstream/del
+ 返回：
+  {"errorCode":1,"msg":"找不到对应的upstream","result":""}
+ ```
+ 
+* * *
+### upstream/get
+* * *
+* **功能**  
+  
+  获取 Upstream 配置文件中的值
+
+* **请求方式**  
+  
+  URL: /upstream/get   
+  Method: GET  
+  
+* **请求参数**
+
+  name=\[someName1\]&key=\[someName2\]
+
+* **返回数据(只解释 result 字段，其他字段含义见前面)**
+  
+  result 字段为指定 upstream 的数组
+
+* **请求例子(只列举部分)**
+
+ ```
+ 成功例子:  
+ 请求：curl http://localhost:8080/upstream/get?name=upstreamA&name=upstreamB
+ 返回：
+  {
+    "errorCode": 0,
+    "msg": "success",
+    "result": [
+        {
+            "gmtCreate": "2014-12-23 18:56:36",
+            "gmtModified": "2014-12-23 18:56:36",
+            "ipHash": false,
+            "keepalive": 32,
+            "name": "upstreamA",
+            "regions": {
+                "Hongkong": [
+                    {
+                        "failTimeout": "10s",
+                        "host": "127.0.0.1:8080",
+                        "maxFails": 1,
+                        "weight": "10"
+                    }
+                ]
+            },
+            "version": 1
+        }
+    ]
+}
+
+ ```
+
+ ```
+ 错误的例子:  
+ 请求：curl http://localhost:8080/upstream/get?name=someName
+ 返回：
+  {"errorCode":1,"msg":"找不到对应的upstream","result":""}
+ ```
+
+* * *
+### upstream/list
+* * *
+* **功能**  
+  
+  获取所有配置项
+
+* **请求方式**  
+  
+  URL: /upstream/list   
+  Method: GET  
+  
+* **请求参数**
+
+  无参数
+
+* **返回数据(只解释 result 字段，其他字段含义见前面)**
+
+  result 字段为所有 upstream 的数组
+
+* **请求例子(只列举部分)**
+
+ ```
+ 成功例子:  
+ 请求：curl http://localhost:8080/upstream/list
+ 返回：
+  {
+    "errorCode": 0,
+    "msg": "success",
+    "result": [
+        {
+            "gmtCreate": "2014-12-23 18:56:36",
+            "gmtModified": "2014-12-23 18:56:36",
+            "ipHash": false,
+            "keepalive": 32,
+            "name": "upstreamA",
+            "regions": {
+                "Hongkong": [
+                    {
+                        "failTimeout": "10s",
+                        "host": "127.0.0.1:8080",
+                        "maxFails": 1,
+                        "weight": "10"
+                    }
+                ]
+            },
+            "version": 1
+        },
+        {
+            "gmtCreate": "2014-12-23 19:24:11",
+            "gmtModified": "2014-12-23 19:24:11",
+            "ipHash": false,
+            "keepalive": 32,
+            "name": "upstreamB",
+            "regions": {
+                "London": [
+                    {
+                        "failTimeout": "10s",
+                        "host": "127.0.0.1:8080",
+                        "maxFails": 1,
+                        "weight": "10"
+                    }
+                ]
+            },
+            "version": 1
+        }
+    ]
+}
+ ```

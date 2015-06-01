@@ -1,0 +1,23 @@
+{"ConfigGen": [
+],
+  "Global": [
+    {
+      "_id": 1,
+      "sendfile": true,
+      "serverNamesHashBucketSize": 10,
+      "sslSessionCache": "shared:SSL:90m",
+      "sslSessionTimeout": "100m",
+      "tcpNodelay":false,
+      "tcpNopush": true,
+      "ulimit": 90,
+      "useEpoll": false,
+      "user": "ops",
+      "version": 1,
+      "workerConnections": 90,
+      "workerProcesses": 90,
+      "workerRlimitNofile": 90,
+      "gmtCreate" : "2014-12-15T08:59:09.172Z",
+	  "gmtModified" : "2014-12-16T08:59:09.172Z"
+    }
+  ]
+}

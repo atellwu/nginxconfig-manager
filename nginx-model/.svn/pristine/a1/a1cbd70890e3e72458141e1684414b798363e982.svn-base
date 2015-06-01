@@ -1,0 +1,15 @@
+#foreach(${upstream} in ${upstreams})
+  upstream ${upstream.name} {
+     #if(${upstream.ipHash})ip_hash; #end
+     #if(${upstream.keepalive})keepalive ${upstream.keepalive}; #end
+     
+     #foreach(${region2Members} in ${upstream.regions.entrySet()})
+        #if(${region2Members.key} == $region)
+           #set(${members} = ${region2Members.value})
+           #foreach($member in $members)
+             server ${member.address} #if(${member.weight})weight=${member.weight}#end max_fails=${member.maxFails} fail_timeout=${member.failTimeout}s;
+           #end
+        #end
+     #end
+  }
+#end

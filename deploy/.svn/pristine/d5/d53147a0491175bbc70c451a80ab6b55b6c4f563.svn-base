@@ -1,0 +1,12 @@
+##添加region区域，启动程序后，可以通过api直接添加：
+curl -H "Content-Type: application/json" -d '{"name":"US_East_N_Virginia"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"US_West_Oregon"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"US_East_N_California"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"EU_Ireland"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"EU_Frankfurt"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Asia_Pacific_Singapore"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Asia_Pacific_Tokyo"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Asia_Pacific_Sydney"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"South_America_Sao_Paulo"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"Hongkong"}' http://localhost:8080/region/save
+curl -H "Content-Type: application/json" -d '{"name":"London"}' http://localhost:8080/region/save

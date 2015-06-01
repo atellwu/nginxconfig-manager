@@ -1,0 +1,57 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.google.code.morphia.query.Query;
+import com.google.code.morphia.query.QueryResults;
+import com.yeahmobi.loadbalance_manager.dao.VhostDao;
+import com.yeahmobi.loadbalance_manager.model.Vhost;
+import com.yeahmobi.loadbalance_manager.service.VhostService;
+
+public class VhostServiceImpl implements VhostService {
+
+    @Autowired
+    private VhostDao dao;
+
+    public void add(Vhost entity) {
+        this.dao.save(entity);
+    }
+
+    public Vhost get(String name) {
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+        q.field("name").equal(name);
+
+        QueryResults<Vhost> result = this.dao.find(q);
+        List<Vhost> list = result.asList();
+
+        if ((list != null) && (list.size() > 0)) {
+            return list.get(0);
+        }
+
+        return null;
+    }
+
+    public void del(String name) {
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+        q.field("name").equal(name);
+
+        this.dao.deleteByQuery(q);
+    }
+
+    public void update(Vhost entity) {
+        this.dao.save(entity);
+    }
+
+    public List<Vhost> listAll() {
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+
+        QueryResults<Vhost> result = this.dao.find(q);
+        List<Vhost> list = result.asList();
+
+        return list;
+
+    }
+
+}

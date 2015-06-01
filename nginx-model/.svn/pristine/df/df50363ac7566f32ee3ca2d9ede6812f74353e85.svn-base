@@ -1,0 +1,7 @@
+upstream ${upstream.name} {
+     #if(${isIpHashOn)ip_hash; #end
+     
+     #for(${server} in ${upstream.servers})
+        server ${server.address} weight=${server.weight} max_fails=${server.maxFails} fail_timeout=${server.failTimeout}s;
+     #end
+}

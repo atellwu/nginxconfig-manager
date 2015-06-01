@@ -1,0 +1,12 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+public enum ConfigType {
+    COMMON_BASE, //
+    COMMON_PROXY, //
+    COMMON_SERVER, //
+    DOMAIN_MAIN, //
+    DOMAIN_CUSTOMER, //
+    DOMAIN_SERVER_NAME, //
+    DOMAIN_UPSTREAM, //
+    ;
+}

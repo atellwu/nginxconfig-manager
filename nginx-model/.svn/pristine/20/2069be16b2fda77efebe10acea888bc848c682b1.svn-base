@@ -1,0 +1,10 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+/**
+ * @author wukezhu
+ */
+public abstract class AbstractConfig extends BaseEntity {
+
+    private static final long serialVersionUID = -2446587945497295737L;
+
+}

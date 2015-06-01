@@ -1,0 +1,3 @@
+#for(${upstreamName} in ${config.upstreamNames})
+    include upstreams/${upstreamName}/upstream.conf
+#end

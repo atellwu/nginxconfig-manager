@@ -1,0 +1,84 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+public class ConfigGen extends BaseEntity {
+
+    // { fileName:"", version:"", url:"", md5:"", lastUpdateTime:"" }
+
+    // global和vhost需要分module
+    private String module;
+
+    private String md5;
+
+    private String content;
+
+    private Type   type;
+
+    // upstream需要每个region一份
+    private String region;
+
+    // vhost需要分name
+    private String vhostName;
+
+    // private String upstreamName;
+
+    public static enum Type {
+        GLOBAL, VHOST, UPSTREAM
+    }
+
+    public String getModule() {
+        return this.module;
+    }
+
+    public void setModule(String fileName) {
+        this.module = fileName;
+    }
+
+    public String getMd5() {
+        return this.md5;
+    }
+
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
+
+    public String getContent() {
+        return this.content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Type getType() {
+        return this.type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public String getRegion() {
+        return this.region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getVhostName() {
+        return this.vhostName;
+    }
+
+    public void setVhostName(String vhostName) {
+        this.vhostName = vhostName;
+    }
+    //
+    // public String getUpstreamName() {
+    // return this.upstreamName;
+    // }
+    //
+    // public void setUpstreamName(String upstreamName) {
+    // this.upstreamName = upstreamName;
+    // }
+
+}

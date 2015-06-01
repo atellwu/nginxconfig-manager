@@ -1,0 +1,19 @@
+package com.yeahmobi.loadbalance_manager.utils;
+
+import java.util.List;
+
+import com.yeahmobi.loadbalance_manager.model.Region;
+
+public class ServiceUtils {
+
+    public static boolean contains(List<Region> allRegions, String regionName) {
+        if (allRegions != null) {
+            for (Region region : allRegions) {
+                if (region.getName().equals(regionName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}

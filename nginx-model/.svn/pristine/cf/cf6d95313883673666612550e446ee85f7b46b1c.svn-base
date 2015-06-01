@@ -1,0 +1,113 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.commons.lang.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.code.morphia.query.Query;
+import com.google.code.morphia.query.QueryResults;
+import com.google.code.morphia.query.UpdateOperations;
+import com.yeahmobi.loadbalance_manager.annotation.DefaultValueUtil;
+import com.yeahmobi.loadbalance_manager.dao.UpstreamDao;
+import com.yeahmobi.loadbalance_manager.exception.ServerException;
+import com.yeahmobi.loadbalance_manager.model.Member;
+import com.yeahmobi.loadbalance_manager.model.Upstream;
+import com.yeahmobi.loadbalance_manager.service.RegionService;
+import com.yeahmobi.loadbalance_manager.service.UpstreamService;
+
+@Service
+public class UpstreamServiceImpl implements UpstreamService {
+
+    @Autowired
+    private UpstreamDao   dao;
+
+    @Autowired
+    private RegionService regionService;
+
+    public void add(Upstream entity) {
+        // 设置默认值
+        try {
+            DefaultValueUtil.resolveDefaultValue(entity);
+        } catch (IllegalArgumentException e) {
+            throw new ServerException("Error when resolving default value", e);
+        } catch (IllegalAccessException e) {
+            throw new ServerException("Error when resolving default value", e);
+        }
+        // 验证region
+        Map<String, List<Member>> regions = entity.getRegions();
+        validateRegions(regions);
+
+        this.dao.save(entity);
+    }
+
+    protected void validateRegions(Map<String, List<Member>> regions) {
+        Validate.notNull(regions, "upstream.region.is.empty");
+        Validate.notEmpty(regions, "upstream.region.is.empty");
+        for (Entry<String, List<Member>> entry : regions.entrySet()) {
+            String regionName = entry.getKey();
+            Validate.isTrue(this.regionService.exists(regionName), "upstream.region.notExist");
+            List<Member> list = entry.getValue();
+            if (list != null) {
+                for (Member member : list) {
+                    Validate.notNull(member.getHost(), "upstream.member.host.is.null");
+                }
+            }
+        }
+    }
+
+    public Upstream get(String name) {
+        return this.dao.get(name);
+    }
+
+    public void del(String name) {
+        this.dao.deleteById(name);
+    }
+
+    public List<Upstream> listAll() {
+        Query<Upstream> q = this.dao.getDatastore().createQuery(Upstream.class);
+
+        QueryResults<Upstream> result = this.dao.find(q);
+        List<Upstream> list = result.asList();
+
+        return list;
+
+    }
+
+    public void update(Upstream upstream) {
+        Validate.notNull(this.dao.get(upstream.getName()), "upstream.name.notExist");
+
+        Query<Upstream> q = this.dao.getDatastore().createQuery(Upstream.class);
+        q.field("name").equal(upstream.getName());
+
+        UpdateOperations<Upstream> ops = this.dao.createUpdateOperations();
+
+        boolean somethingUpdate = false;
+        if (upstream.getKeepalive() != null) {
+            ops.set("keepalive", upstream.getKeepalive());
+            somethingUpdate = true;
+        }
+        if (upstream.getIpHash() != null) {
+            ops.set("ipHash", upstream.getIpHash());
+            somethingUpdate = true;
+        }
+        if (upstream.getRegions() != null) {
+            validateRegions(upstream.getRegions());
+
+            ops.set("regions", upstream.getRegions());
+            somethingUpdate = true;
+        }
+
+        Validate.isTrue(somethingUpdate, "upstream.nothingUpdate");
+
+        this.dao.update(q, ops);
+    }
+
+    public boolean exists(String name) {
+        return this.dao.get(name) != null;
+    }
+
+}

@@ -1,0 +1,38 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.fastjson.JSON;
+
+/**
+ * @author wukezhu
+ */
+public class AbstractController {
+
+    private static final String SUCCESS = "success";
+    private static final String MSG     = "msg";
+    private static final Logger LOGGER  = LoggerFactory.getLogger(AbstractController.class);
+
+    protected Object json(Handler handler) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        try {
+            Map<String, Object> result = new HashMap<String, Object>();
+            handler.handle(result);
+
+            map.put("result", result);
+            map.put(SUCCESS, true);
+        } catch (IllegalArgumentException e) {
+            map.put(SUCCESS, false);
+            map.put(MSG, e.getMessage());
+        } catch (Exception e) {
+            map.put(SUCCESS, false);
+            map.put(MSG, e.getMessage());
+            LOGGER.error(e.getMessage(), e);
+        }
+        return JSON.toJSONString(map);
+    }
+}

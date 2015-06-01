@@ -1,0 +1,5 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+public enum Region {
+    US_EAST, US_WEST;
+}

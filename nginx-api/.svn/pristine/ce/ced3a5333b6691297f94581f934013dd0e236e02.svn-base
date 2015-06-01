@@ -1,0 +1,244 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang.Validate;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.yeahmobi.loadbalance_manager.common.Constants;
+import com.yeahmobi.loadbalance_manager.common.VelocityUtil;
+import com.yeahmobi.loadbalance_manager.helper.JsonArgument;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.NodeStatus;
+import com.yeahmobi.loadbalance_manager.model.Vhost;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+import com.yeahmobi.loadbalance_manager.service.VhostService;
+
+/**
+ * @author atell.wu
+ */
+@Controller
+@Validated
+@SuppressWarnings("unchecked")
+@RequestMapping(value = { "/vhost" })
+public class VhostController extends AbstractController {
+
+    private static final String DIR = "template/vhost/";
+
+    private static String[]     modules;
+
+    static {
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        try {
+            Resource[] resources = resolver.getResources(DIR + "*");
+            if (resources != null) {
+                modules = new String[resources.length];
+                for (int i = 0; i < resources.length; i++) {
+                    Resource resource = resources[i];
+                    modules[i] = resource.getFilename();
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error when get vhost resources", e);
+        }
+    }
+
+    @Autowired
+    private VhostService        vhostService;
+
+    @Autowired
+    private ConfigGenService    configGenService;
+
+    @Autowired
+    private NodeStatusService   nodeStatusService;
+
+    /**
+     * 获取所有vhost
+     */
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String list() {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                List<Vhost> list = VhostController.this.vhostService.listAll();
+
+                result.setResult(list);
+            }
+        });
+    }
+
+    /**
+     * 获取指定vhost
+     */
+    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String get(@NotEmpty
+    final String[] name) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                List<Vhost> list = new ArrayList<Vhost>();
+                for (String name0 : name) {
+                    Vhost vhost = VhostController.this.vhostService.get(name0);
+                    if (vhost != null) {
+                        list.add(vhost);
+                    }
+                }
+
+                result.setResult(list);
+            }
+        });
+    }
+
+    /**
+     * 新增或更新一个vhost
+     */
+    @RequestMapping(value = "/save", method = RequestMethod.POST, consumes = "application/json", produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String save(@NotNull
+    @Valid
+    final @JsonArgument Vhost vhost) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) throws IOException {
+                Vhost origionVhost = VhostController.this.vhostService.get(vhost.getName());
+
+                if (origionVhost != null) {
+                    VhostController.this.vhostService.update(vhost);
+                } else {
+                    VhostController.this.vhostService.add(vhost);
+                }
+
+                // 渲染成Velocity，放到下载表 service.add(fileName,version,config)
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("vhost", vhost);
+                for (String module : modules) {
+                    VhostController.this.configGenService.addVhost(vhost.getName(), module,
+                                                                   VelocityUtil.build(map, DIR + module));
+                }
+
+                // 更新所有节点的状态
+                VhostController.this.nodeStatusService.updateAll(NodeStatus.State.TOBE_UPDATED);
+
+            }
+        });
+    }
+
+    /**
+     * 删除vhost
+     */
+    @RequestMapping(value = "/del", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String del(@NotEmpty
+    final String[] name) {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) throws IOException {
+                for (String name0 : name) {
+                    Vhost vhost = VhostController.this.vhostService.get(name0);
+                    Validate.notNull(vhost, "vhost.name.notExist");
+                    VhostController.this.vhostService.del(name0);
+                }
+
+                // 更新所有节点的状态
+                VhostController.this.nodeStatusService.updateAll(NodeStatus.State.TOBE_UPDATED);
+            }
+        });
+    }
+
+    /**
+     * 下载配置文件
+     */
+    @RequestMapping(value = "/download", method = RequestMethod.GET)
+    @ResponseBody
+    public Object download(@NotNull Long id) throws IOException {
+        ConfigGen vhost = this.configGenService.getVhost(id);
+        Validate.notNull(vhost, "configGen.not.exist");
+
+        String documentBody = vhost.getContent();
+
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(MediaType.TEXT_PLAIN);
+        header.set("Content-Disposition", "attachment; filename=" + vhost.getVhostName() + "-" + vhost.getModule()
+                                          + ".conf");
+
+        return new HttpEntity<String>(documentBody, header);
+    }
+
+    /**
+     * 获取配置文件的信息
+     */
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public String info() {
+        return json(new Handler() {
+
+            public void handle(JsonResult result) {
+                List<Vhost> vhosts = VhostController.this.vhostService.listAll();
+
+                List<Map<String, Object>> list = new ArrayList();
+                for (Vhost vhost : vhosts) {
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("vhost", vhost.getName());
+
+                    List list0 = new ArrayList();
+                    for (String module : modules) {
+                        ConfigGen configGen = VhostController.this.configGenService.getLastVhost(vhost.getName(),
+                                                                                                 module);
+                        if (configGen == null) {
+                            continue;
+                        }
+                        Map<String, Object> map0 = new HashMap<String, Object>();
+                        map0.put("module", module);
+                        map0.put("version", configGen.getId());
+                        map0.put("md5", configGen.getMd5());
+                        map.put("gmtModified",
+                                DateFormatUtils.format(configGen.getGmtModified(), Constants.DATE_PATTERN));
+                        map0.put("url", "/vhost/download?id=" + configGen.getId());
+
+                        list0.add(map0);
+                    }
+                    map.put("modules", list0);
+
+                    list.add(map);
+                }
+
+                result.setResult(list);
+            }
+
+        });
+    }
+    // /**
+    // * 从request中字段解析成keyValue，以map返回
+    // *
+    // * @throws IOException
+    // */
+    // private Vhost _parseParams(HttpServletRequest request) throws IOException {
+    // ServletInputStream inputStream = request.getInputStream();
+    // String str = IOUtils.toString(inputStream, Constants.INPUT_ENCODE);
+    // Vhost vhost = JSON.parseObject(str, Vhost.class);
+    // return vhost;
+    // }
+
+}

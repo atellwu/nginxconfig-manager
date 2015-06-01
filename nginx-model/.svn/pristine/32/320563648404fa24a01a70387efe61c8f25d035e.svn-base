@@ -1,0 +1,7 @@
+package com.yeahmobi.loadbalance_manager.model.common;
+
+import com.yeahmobi.loadbalance_manager.model.AbstractConfig;
+
+public class ServerConfig extends AbstractConfig {
+
+}

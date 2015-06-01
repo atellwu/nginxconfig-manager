@@ -1,0 +1,194 @@
+package com.yeahmobi.loadbalance_manager.api;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.yeahmobi.loadbalance_manager.common.HttpServletRequestHashMap;
+import com.yeahmobi.loadbalance_manager.common.HttpServletRequestMapWrapper;
+import com.yeahmobi.loadbalance_manager.common.VelocityUtil;
+import com.yeahmobi.loadbalance_manager.model.ConfigGen;
+import com.yeahmobi.loadbalance_manager.model.Global;
+import com.yeahmobi.loadbalance_manager.model.NodeStatus;
+import com.yeahmobi.loadbalance_manager.service.ConfigGenService;
+import com.yeahmobi.loadbalance_manager.service.GlobalService;
+import com.yeahmobi.loadbalance_manager.service.NodeStatusService;
+
+/**
+ * TODO 参数验证后面统一做
+ *
+ * @author wukezhu
+ */
+@Controller
+@RequestMapping(value = { "/global" })
+public class GlobalController extends AbstractController {
+
+    private static final String DIR = "template/global/";
+
+    // private static final Logger LOGGER = LoggerFactory.getLogger(GlobalController.class);
+    private static String[]     modules;
+
+    static {
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        try {
+            Resource[] resources = resolver.getResources(DIR + "*");
+            if (resources != null) {
+                modules = new String[resources.length];
+                for (int i = 0; i < resources.length; i++) {
+                    Resource resource = resources[i];
+                    modules[i] = StringUtils.substring(resource.getFilename(), 0, resource.getFilename().length() - 5);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error when get global resources", e);
+        }
+    }
+
+    @Autowired
+    private GlobalService       globalService;
+
+    @Autowired
+    private ConfigGenService    configGenService;
+
+    @Autowired
+    private NodeStatusService   nodeStatusService;
+
+    /**
+     * 获取所有配置
+     */
+    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object list() {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                Global global = GlobalController.this.globalService.get();
+
+                result.put("version", global.getVersion());
+                result.put("lastUpdateTime", global.getGmtModified());
+
+                result.put("configs", global);
+            }
+        });
+    }
+
+    /**
+     * 获取指定配置
+     */
+    @RequestMapping(value = "/get", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object get(final String[] keys) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                Global global = GlobalController.this.globalService.get();
+
+                Map<String, Object> keyValues = filter(global, keys);
+
+                result.put("version", global.getVersion());
+                result.put("lastUpdateTime", global.getGmtModified());
+                result.put("configs", keyValues);
+            }
+        });
+    }
+
+    /**
+     * 更新配置
+     */
+    @RequestMapping(value = "/set", method = RequestMethod.POST, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object set(final @HttpServletRequestHashMap HttpServletRequestMapWrapper requestMap) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                Global global = GlobalController.this.globalService.get();
+
+                apply(global, requestMap.getMap());
+
+                // TODO 验证 config是否nginx -t -c 通过
+
+                GlobalController.this.globalService.update(global);
+
+                // 渲染成Velocity，放到下载表 service.add(fileName,version,config)
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("global", global);
+                for (String module : modules) {
+                    GlobalController.this.configGenService.addGlobal(module, VelocityUtil.build(map, DIR + module));
+                }
+
+                // 更新所有节点的状态
+                GlobalController.this.nodeStatusService.updateAll(NodeStatus.State.TOBE_UPDATED);
+
+                // 获取global最新version返回
+                global = GlobalController.this.globalService.get();
+
+                result.put("version", global.getVersion());
+                result.put("lastUpdateTime", global.getGmtModified());
+            }
+        });
+    }
+
+    /**
+     * 下载global配置文件 （直接获取global对象，渲染成Velocity即可下载）
+     *
+     * @param fileName
+     */
+    @RequestMapping(value = "/download", method = RequestMethod.GET)
+    @ResponseBody
+    public HttpEntity<String> download(long version, String fileName) throws IOException {
+        ConfigGen global = this.configGenService.getGlobal(fileName, version);
+        String documentBody = global.getContent();
+
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(new MediaType("application", "plain/text"));
+        header.set("Content-Disposition", "attachment; filename=" + fileName + "-upstream.conf");
+
+        return new HttpEntity<String>(documentBody, header);
+    }
+
+    /**
+     * 获取6个global配置文件的信息
+     */
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json; charset=utf-8")
+    @ResponseBody
+    public Object info(final String region, final String nodeId) {
+        return json(new Handler() {
+
+            public void handle(Map<String, Object> result) {
+                // 获取global那6个文件的信息
+                for (String module : modules) {
+                    ConfigGen global = GlobalController.this.configGenService.getLastGlobal(module);
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("version", global.getVersion());
+                    String url = "/global/download?fileName=" + global.getModule() + "&version=" + global.getVersion();
+                    map.put("md5", global.getMd5());
+                    map.put("url", url);
+                    result.put(module, map);
+                }
+
+            }
+        });
+    }
+
+    /**
+     * 从request中字段解析成keyValue，以map返回
+     */
+    // private Map<String, String> parseParams(HttpServletRequest request) {
+    // Map<String, String> map = new HashMap<String, String>();
+    // // TODO request
+    // return map;
+    // }
+
+}

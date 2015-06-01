@@ -1,0 +1,42 @@
+package com.yeahmobi.loadbalance_manager.model;
+
+public class Member {
+
+    private String host;
+    private String maxFails;
+    private String failTimeout;
+    private String weight;
+
+    public String getHost() {
+        return this.host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public String getMaxFails() {
+        return this.maxFails;
+    }
+
+    public void setMaxFails(String maxFails) {
+        this.maxFails = maxFails;
+    }
+
+    public String getFailTimeout() {
+        return this.failTimeout;
+    }
+
+    public void setFailTimeout(String failTimeout) {
+        this.failTimeout = failTimeout;
+    }
+
+    public String getWeight() {
+        return this.weight;
+    }
+
+    public void setWeight(String weight) {
+        this.weight = weight;
+    }
+
+}

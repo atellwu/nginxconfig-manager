@@ -1,0 +1,25 @@
+package com.yeahmobi.loadbalance_manager.service;
+
+import java.util.Date;
+
+import com.yeahmobi.loadbalance_manager.model.NodeStatus;
+import com.yeahmobi.loadbalance_manager.model.Region;
+
+public interface NodeStatusService {
+
+    /** 将所有记录更新为“待更新” */
+    void updateAll(NodeStatus status);
+
+    /** 将所有region记录更新为“待更新” */
+    void update(Region region, NodeStatus status);
+
+    /** 更新“心跳时间” */
+    void update(Region region, String nodeId, Date lastHeartbeatTime);
+
+    /** 查询某个region&nodeId的“状态” */
+    NodeStatus get(String fileName, long version);
+
+    /** 更新某个region&nodeId的“状态” */
+    void update(Region region, String nodeId, NodeStatus status);
+
+}

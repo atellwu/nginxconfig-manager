@@ -1,0 +1,82 @@
+package com.yeahmobi.loadbalance_manager.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.code.morphia.query.Query;
+import com.google.code.morphia.query.QueryResults;
+import com.google.code.morphia.query.UpdateOperations;
+import com.yeahmobi.loadbalance_manager.dao.VhostDao;
+import com.yeahmobi.loadbalance_manager.model.Vhost;
+import com.yeahmobi.loadbalance_manager.service.VhostService;
+
+@Service
+public class VhostServiceImpl implements VhostService {
+
+    @Autowired
+    private VhostDao dao;
+
+    public void add(Vhost entity) {
+        this.dao.save(entity);
+    }
+
+    public void update(Vhost vhost) {
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+        q.field("name").equal(vhost.getName());
+
+        UpdateOperations<Vhost> ops = this.dao.createUpdateOperations();
+        if (vhost.getIsDefaultServer() != null) {
+            ops.set("isDefaultServer", vhost.getIsDefaultServer());
+        }
+        if (vhost.getCustom() != null) {
+            ops.set("custom", vhost.getCustom());
+        }
+        if (vhost.getListenPort() != null) {
+            ops.set("listenPort", vhost.getListenPort());
+        }
+        if (vhost.getServerNames() != null) {
+            ops.set("serverNames", vhost.getServerNames());
+        }
+        if (vhost.getUpstreamName() != null) {
+            ops.set("upstreamName", vhost.getUpstreamName());
+        }
+
+        this.dao.update(q, ops);
+    }
+
+    public Vhost get(String name) {
+        // Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+        // q.field("name").equal(name);
+        //
+        // QueryResults<Vhost> result = this.dao.find(q);
+        // List<Vhost> list = result.asList();
+        //
+        // if ((list != null) && (list.size() > 0)) {
+        // return list.get(0);
+        // }
+        //
+        // return null;
+        return this.dao.get(name);
+    }
+
+    public void del(String name) {
+        // Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+        // q.field("name").equal(name);
+        //
+        // this.dao.deleteByQuery(q);
+        this.dao.deleteById(name);
+    }
+
+    public List<Vhost> listAll() {
+        Query<Vhost> q = this.dao.getDatastore().createQuery(Vhost.class);
+
+        QueryResults<Vhost> result = this.dao.find(q);
+        List<Vhost> list = result.asList();
+
+        return list;
+
+    }
+
+}

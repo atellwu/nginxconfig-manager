@@ -1,0 +1,30 @@
+http {
+    default_type ${global.defaultType};
+    ssl_session_cache ${global.sslSessionCache};
+    ssl_session_timeout ${global.sslSessionTimeout};
+    sendfile #if(${global.sendfile}) on #else off #end;
+    tcp_nopush #if(${global.tcpNopush}) on #else off #end;
+    open_file_cache ${global.openFileCcache};
+    open_file_cache_min_uses ${global.openFileCacheMinUses};
+    open_file_cache_valid ${global.openFileCacheValid};
+    tcp_nodelay #if($global.tcpNodelay)on #else off #end;
+    index ${global.index};
+    keepalive_timeout  ${global.keepaliveTimeout};
+    keepalive_requests ${global.keepaliveRequests};
+
+    client_header_buffer_size ${global.clientHeaderBufferSize};
+    large_client_header_buffers ${global.largeClientHeaderBuffers};
+
+    server_names_hash_bucket_size ${global.serverNamesHashBucketSize};
+
+    client_max_body_size ${global.clientMaxBodySize};
+
+    log_format ${global.logFormat};
+
+    include global_mimetypes.conf;
+    include global_proxy.conf;
+    include global_http_custom.conf;
+    include conf.d/vhost/*/server.conf;
+    include conf.d/upstream.conf;
+    include nginx_monitor.conf;
+}
